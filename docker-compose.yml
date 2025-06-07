@@ -1,0 +1,28 @@
+services:
+  client:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+    command: sh -c "npm run build && npm run start"
+    depends_on:
+      - mongo
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    command: ["mongod", "--bind_ip_all", "--nounixsocket"]
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+
+networks:
+  app-network:

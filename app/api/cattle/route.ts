@@ -1,6 +1,9 @@
+import { initDatabase } from "@/lib/init-db";
+import { connectToDatabase } from "@/lib/mongo";
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+await initDatabase();
 /**
  * GET /api/cattle
  * Obtiene la lista de ganado con opciones de filtrado
@@ -16,37 +19,27 @@ export async function GET(request: NextRequest) {
     const lng = searchParams.get("lng") ? Number.parseFloat(searchParams.get("lng") || "") : null
     const radius = searchParams.get("radius") ? Number.parseFloat(searchParams.get("radius") || "") : null
 
+    let cattle: {
+    id: string;
+    name: string;
+    description: string;
+    imageUrl: string;
+    position: [number, number];
+    connected: boolean;
+    zoneId: string;
+    } []
+
     // Simulación de datos de ganado
-    const cattle = [
-      {
-        id: "cow-1",
-        name: "Bella",
-        description: "Holstein de 5 años, alta productora de leche",
-        imageUrl: "/placeholder.svg?height=200&width=200",
-        position: [40.7128, -74.006] as [number, number],
-        connected: true,
-        zoneId: "farm",
-      },
-      {
-        id: "cow-2",
-        name: "Luna",
-        description: "Jersey de 3 años, excelente calidad de leche",
-        imageUrl: "/placeholder.svg?height=200&width=200",
-        position: [40.7138, -74.008] as [number, number],
-        connected: true,
-        zoneId: "stables",
-      },
-      {
-        id: "cow-3",
-        name: "Estrella",
-        description: "Angus de 4 años, buena para carne",
-        imageUrl: "/placeholder.svg?height=200&width=200",
-        position: [40.7148, -74.007] as [number, number],
-        connected: false,
-        zoneId: "pasture",
-      },
-      // Otros animales se agregarían aquí
-    ]
+    const db = await connectToDatabase();
+    cattle = (await db.collection('cattle').find().toArray()).map((doc: any) => ({
+      id: doc._id?.toString() ?? "",
+      name: doc.name ?? "",
+      description: doc.description ?? "",
+      imageUrl: doc.imageUrl ?? "",
+      position: doc.position ?? [0, 0],
+      connected: doc.connected ?? false,
+      zoneId: doc.zoneId ?? "",
+    }));
 
     // Función para calcular la distancia entre dos puntos (Haversine formula)
     function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
