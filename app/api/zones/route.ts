@@ -1,3 +1,4 @@
+import { connectToDatabase } from "@/lib/mongo";
 import { NextResponse } from "next/server"
 
 /**
@@ -6,30 +7,24 @@ import { NextResponse } from "next/server"
  */
 export async function GET() {
   try {
-    // Simulación de datos de zonas
-    const zones = [
-      {
-        id: "farm",
-        name: "Granja Completa",
-        description: "Perímetro completo de la granja",
-        bounds: [
-          [40.7028, -74.016],
-          [40.7228, -73.996],
-        ],
-        color: "#3b82f6",
-      },
-      {
-        id: "stables",
-        name: "Establos",
-        description: "Área de descanso para el ganado",
-        bounds: [
-          [40.7048, -74.014],
-          [40.7088, -74.01],
-        ],
-        color: "#ef4444",
-      },
-      // Otras zonas se agregarían aquí
-    ]
+
+    let zones: {
+    id: string;
+    name: string;
+    description: string;
+    bounds: number[][];
+    color: string;
+    }[]
+    // Conectar a la base de datos y obtener las zonas
+    const db = await connectToDatabase();
+    zones = (await db.collection('zones').find().toArray()).map((doc: any) => ({
+      id: doc._id?.toString() ?? "",
+      name: doc.name ?? "",
+      description: doc.description ?? "",
+      bounds: doc.bounds ?? [0, 0],
+      color: doc.color ?? "",
+    }));
+
 
     return NextResponse.json(
       {

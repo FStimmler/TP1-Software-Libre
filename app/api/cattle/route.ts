@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     zoneId: string;
     } []
 
-    // Simulación de datos de ganado
     const db = await connectToDatabase();
     cattle = (await db.collection('cattle').find().toArray()).map((doc: any) => ({
       id: doc._id?.toString() ?? "",
