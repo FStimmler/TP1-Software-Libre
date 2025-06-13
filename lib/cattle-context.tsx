@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { generateMockCattle, generateMockZones } from "@/lib/mock-data"
 import { useAuth } from "@/lib/auth-context"
 
 export interface Cattle {
@@ -36,6 +35,18 @@ interface CattleContextType {
 
 const CattleContext = createContext<CattleContextType | undefined>(undefined)
 
+async function loadZones() {
+    const res = await fetch('/api/zones');
+    const mockZones = await res.json();
+    return mockZones.data
+}
+
+async function loadCattle() {
+    const res = await fetch('/api/cattle');
+    const mockCattle = await res.json();
+    return mockCattle.data
+}
+
 export function CattleProvider({ children }: { children: ReactNode }) {
   const [cattle, setCattle] = useState<Cattle[]>([])
   const [zones, setZones] = useState<Zone[]>([])
@@ -45,6 +56,21 @@ export function CattleProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast()
   const { isAuthenticated } = useAuth()
 
+
+  useEffect(() => {
+    async function fetchData() {
+      const [zonesData,cattleData] = await Promise.all([
+        loadZones(),
+        loadCattle()
+      ]);
+
+      setZones(zonesData);
+      setCattle(cattleData);
+    }
+
+    fetchData();
+  }, []);
+
   // Inicializar datos solo si el usuario está autenticado
   useEffect(() => {
     if (!isAuthenticated) {
@@ -52,17 +78,20 @@ export function CattleProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    const mockZones = generateMockZones()
-    const mockCattle = generateMockCattle(mockZones)
+    if(zones){
 
-    setZones(mockZones)
-    setCattle(mockCattle)
-    setLoading(false)
+      //const mockCattle = generateMockCattle(zones)
 
-    // Reproducir sonido de bienvenida
-    const audio = new Audio("/moo.mp3")
-    audio.play().catch((e) => console.log("Error reproduciendo audio:", e))
-  }, [isAuthenticated])
+      //setZones(mockZones)
+      //setCattle(mockCattle)
+      setLoading(false)
+
+      // Reproducir sonido de bienvenida
+      const audio = new Audio("/moo.mp3")
+      audio.play().catch((e) => console.log("Error reproduciendo audio:", e))
+
+    }
+  }, [isAuthenticated,zones])
 
   // Simular movimiento de vacas solo si el usuario está autenticado
   useEffect(() => {
