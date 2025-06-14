@@ -5,7 +5,7 @@ services:
       - "3000:3000"
     volumes:
       - .:/app
-    command: npm start
+    command: sh -c "npm run build && npm run start"
     depends_on:
       - mongo
     networks:

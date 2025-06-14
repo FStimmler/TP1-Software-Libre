@@ -1,3 +1,4 @@
+import { connectToDatabase } from "@/lib/mongo"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
@@ -13,31 +14,25 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "1")
     const limit = Number.parseInt(searchParams.get("limit") || "10")
 
-    // Simulación de datos de usuarios
-    const users = [
-      {
-        id: "1",
-        name: "Administrador",
-        email: "admin@ejemplo.com",
-        role: "Administrador",
-        createdAt: "2023-01-15",
-      },
-      {
-        id: "2",
-        name: "Juan Pérez",
-        email: "juan@ejemplo.com",
-        role: "Supervisor",
-        createdAt: "2023-02-20",
-      },
-      {
-        id: "3",
-        name: "María López",
-        email: "maria@ejemplo.com",
-        role: "Operador",
-        createdAt: "2023-03-10",
-      },
-      // Otros usuarios se agregarían aquí
-    ]
+    let users: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+      password: string;
+      createdAt: string;
+    }[]
+
+
+    const db = await connectToDatabase();
+    users = (await db.collection('users').find().toArray()).map((doc: any) => ({ 
+      id: doc._id?.toString() ?? "",
+      name: doc.name ?? "",
+      email: doc.email ?? "",
+      role: doc.role ?? "",
+      password: doc.password ?? "",
+      createdAt: doc.createdAt ?? "",
+    }))
 
     // Filtrar por término de búsqueda si existe
     const filteredUsers = search

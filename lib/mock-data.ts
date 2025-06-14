@@ -180,3 +180,45 @@ export function generateMockCattle(zones: Zone[]): Cattle[] {
 
   return cattle
 }
+
+type User = {
+  id: string
+  name: string
+  email: string
+  role: string
+  password: string
+  createdAt: string
+}
+
+export function generateMockUsers(): User[] {
+  // Simulación de datos de usuarios
+  const users = [
+    {
+      id: "1",
+      name: "Administrador",
+      email: "admin@ejemplo.com",
+      role: "Administrador",
+      password: "$2a$10$Ytso9RDVSnDF3NJ.bkedhOKdS/dhU0igQ1ny75bBTVEKfux0Ql05K", // Contraseña: "password"
+      createdAt: "2023-01-15",
+    },
+    {
+      id: "2",
+      name: "Juan Pérez",
+      email: "juan@ejemplo.com",
+      role: "Supervisor",
+      password: "$2a$10$Ytso9RDVSnDF3NJ.bkedhOKdS/dhU0igQ1ny75bBTVEKfux0Ql05K", // Contraseña: "password"
+      createdAt: "2023-02-20",
+    },
+    {
+      id: "3",
+      name: "María López",
+      email: "maria@ejemplo.com",
+      role: "Operador",
+      password: "$2a$10$Ytso9RDVSnDF3NJ.bkedhOKdS/dhU0igQ1ny75bBTVEKfux0Ql05K", // Contraseña: "password"
+      createdAt: "2023-03-10",
+    },
+    // Otros usuarios se agregarían aquí
+  ]
+
+  return users
+}
