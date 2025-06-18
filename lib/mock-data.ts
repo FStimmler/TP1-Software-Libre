@@ -67,10 +67,10 @@ export function generateMockZones(): Zone[] {
     id: "farm",
     name: "Granja Completa",
     description: "Perímetro completo de la granja",
-    bounds: [
+    bounds:boundsToGeoJSON([
       [FARM_CENTER[0] - 0.01, FARM_CENTER[1] - 0.01],
       [FARM_CENTER[0] + 0.01, FARM_CENTER[1] + 0.01],
-    ],
+    ]),
     color: ZONE_COLORS[0],
   }
 
@@ -81,60 +81,60 @@ export function generateMockZones(): Zone[] {
       id: "stables",
       name: "Establos",
       description: "Área de descanso para el ganado",
-      bounds: [
+      bounds:boundsToGeoJSON( [
         [FARM_CENTER[0] - 0.008, FARM_CENTER[1] - 0.008],
         [FARM_CENTER[0] - 0.004, FARM_CENTER[1] - 0.004],
-      ],
+      ]),
       color: ZONE_COLORS[1],
     },
     {
       id: "feeders",
       name: "Comederos",
       description: "Área de alimentación",
-      bounds: [
+      bounds: boundsToGeoJSON([
         [FARM_CENTER[0] - 0.008, FARM_CENTER[1] + 0.004],
         [FARM_CENTER[0] - 0.004, FARM_CENTER[1] + 0.008],
-      ],
+      ]),
       color: ZONE_COLORS[2],
     },
     {
       id: "waterers",
       name: "Bebederos",
       description: "Área de hidratación",
-      bounds: [
+      bounds: boundsToGeoJSON([
         [FARM_CENTER[0] + 0.004, FARM_CENTER[1] - 0.008],
         [FARM_CENTER[0] + 0.008, FARM_CENTER[1] - 0.004],
-      ],
+      ]),
       color: ZONE_COLORS[3],
     },
     {
       id: "milking",
       name: "Áreas de Ordeño",
       description: "Zona de producción de leche",
-      bounds: [
+      bounds: boundsToGeoJSON([
         [FARM_CENTER[0] + 0.004, FARM_CENTER[1] + 0.004],
         [FARM_CENTER[0] + 0.008, FARM_CENTER[1] + 0.008],
-      ],
+      ]),
       color: ZONE_COLORS[4],
     },
     {
       id: "maternity",
       name: "Maternidades",
       description: "Área para vacas preñadas y recién paridas",
-      bounds: [
+      bounds: boundsToGeoJSON([
         [FARM_CENTER[0] - 0.002, FARM_CENTER[1] - 0.002],
         [FARM_CENTER[0] + 0.002, FARM_CENTER[1] + 0.002],
-      ],
+      ]),
       color: ZONE_COLORS[5],
     },
     {
       id: "pasture",
       name: "Áreas de Pastoreo",
       description: "Zonas de alimentación natural",
-      bounds: [
+      bounds: boundsToGeoJSON([
         [FARM_CENTER[0] - 0.006, FARM_CENTER[1] - 0.001],
         [FARM_CENTER[0] - 0.001, FARM_CENTER[1] + 0.006],
-      ],
+      ]),
       color: ZONE_COLORS[6],
     },
   ]
@@ -149,7 +149,14 @@ export function generateMockCattle(zones: Zone[]): Cattle[] {
   for (let i = 0; i < 20; i++) {
     // Posición aleatoria dentro de la granja
     const farmZone = zones[0]
-    const [[minLat, minLng], [maxLat, maxLng]] = farmZone.bounds
+
+    const bounds = farmZone.bounds.coordinates[0]
+
+
+    const [[minLat, minLng], [maxLat, maxLng]] = [
+      [bounds[0][1], bounds[0][0]],  // esquina SW (lat, lon)
+      [bounds[2][1], bounds[2][0]],  // esquina NE (lat, lon)
+    ]
 
     const randomLat = minLat + Math.random() * (maxLat - minLat)
     const randomLng = minLng + Math.random() * (maxLng - minLng)
@@ -158,7 +165,11 @@ export function generateMockCattle(zones: Zone[]): Cattle[] {
     let zoneId: string | null = null
 
     for (const zone of zones) {
-      const [[zMinLat, zMinLng], [zMaxLat, zMaxLng]] = zone.bounds
+      let boundszone = zone.bounds.coordinates[0]
+      const [[zMinLat, zMinLng], [zMaxLat, zMaxLng]] = [
+        [boundszone[0][1], boundszone[0][0]],  // esquina SW (lat, lon)
+        [boundszone[2][1], boundszone[2][0]],  // esquina NE (lat, lon)
+      ]
 
       if (randomLat >= zMinLat && randomLat <= zMaxLat && randomLng >= zMinLng && randomLng <= zMaxLng) {
         zoneId = zone.id
@@ -221,4 +232,24 @@ export function generateMockUsers(): User[] {
   ]
 
   return users
+}
+
+function boundsToGeoJSON(bounds: number[][]): { type: "Polygon"; coordinates: [[[number, number], [number, number], [number, number], [number, number], [number, number]]] } {
+  const [[lat1, lon1], [lat2, lon2]] = bounds;
+
+  const minLat = Math.min(lat1, lat2);
+  const maxLat = Math.max(lat1, lat2);
+  const minLon = Math.min(lon1, lon2);
+  const maxLon = Math.max(lon1, lon2);
+
+  return {
+    type: "Polygon",
+    coordinates: [[
+      [minLon, minLat],
+      [minLon, maxLat],
+      [maxLon, maxLat],
+      [maxLon, minLat],
+      [minLon, minLat]
+    ]]
+  };
 }

@@ -61,24 +61,32 @@ export default function CattleMap() {
       />
 
       {/* Renderizar zonas */}
-      {zones.map((zone) => (
-        <Rectangle
-          key={zone.id}
-          bounds={zone.bounds as L.LatLngBoundsExpression}
-          pathOptions={{
-            color: zone.color,
-            weight: 2,
-            fillOpacity: selectedZoneId === zone.id ? 0.3 : 0.1,
-          }}
-        >
-          <Popup>
-            <div>
-              <h3 className="font-semibold">{zone.name}</h3>
-              <p>{zone.description}</p>
-            </div>
-          </Popup>
-        </Rectangle>
-      ))}
+      {zones.map((zone) => {
+        const coords = zone.bounds.coordinates[0]
+        const latLngBounds: L.LatLngBoundsExpression = [
+          [coords[0][1], coords[0][0]], // [lat, lon]
+          [coords[2][1], coords[2][0]]
+        ]
+
+        return (
+          <Rectangle
+            key={zone.id}
+            bounds={latLngBounds}
+            pathOptions={{
+              color: zone.color,
+              weight: 2,
+              fillOpacity: selectedZoneId === zone.id ? 0.3 : 0.1,
+            }}
+          >
+            <Popup>
+              <div>
+                <h3 className="font-semibold">{zone.name}</h3>
+                <p>{zone.description}</p>
+              </div>
+            </Popup>
+          </Rectangle>
+        )
+      })}
 
       {/* Renderizar vacas */}
       {cattle.map((cow) => (

@@ -18,7 +18,16 @@ export interface Zone {
   id: string
   name: string
   description: string
-  bounds: [[number, number], [number, number]] // [[lat1, lng1], [lat2, lng2]]
+  bounds: {
+    type: "Polygon"
+    coordinates: [[
+      [number, number],
+      [number, number],
+      [number, number],
+      [number, number],
+      [number, number]
+    ]]
+  }
   color: string
 }
 
@@ -105,7 +114,12 @@ export function CattleProvider({ children }: { children: ReactNode }) {
 
           // Obtener los límites de la granja (primera zona)
           const farmZone = zones[0]
-          const [[minLat, minLng], [maxLat, maxLng]] = farmZone.bounds
+          const bounds = farmZone.bounds.coordinates[0]
+
+          const [[minLat, minLng], [maxLat, maxLng]] = [
+            [bounds[0][1], bounds[0][0]],  // esquina SW (lat, lon)
+            [bounds[2][1], bounds[2][0]],  // esquina NE (lat, lon)
+          ]
 
           // Movimiento aleatorio pequeño
           const latChange = (Math.random() - 0.5) * 0.001
@@ -132,7 +146,11 @@ export function CattleProvider({ children }: { children: ReactNode }) {
           let newZoneId: string | null = null
 
           for (const zone of zones) {
-            const [[zMinLat, zMinLng], [zMaxLat, zMaxLng]] = zone.bounds
+            let boundszone = zone.bounds.coordinates[0]
+            const [[zMinLat, zMinLng], [zMaxLat, zMaxLng]] = [
+              [boundszone[0][1], boundszone[0][0]],  // esquina SW (lat, lon)
+              [boundszone[2][1], boundszone[2][0]],  // esquina NE (lat, lon)
+            ]
 
             if (
               newPosition[0] >= zMinLat &&
