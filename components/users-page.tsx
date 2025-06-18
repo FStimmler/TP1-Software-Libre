@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ChevronRight, MoreHorizontal, Search, Trash, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -26,45 +26,37 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
+import bcrypt from "bcryptjs"
 
 // Datos de ejemplo para usuarios
-const mockUsers = [
-  {
-    id: "1",
-    name: "Administrador",
-    email: "admin@ejemplo.com",
-    role: "Administrador",
-    createdAt: "2023-01-15",
-  },
-  {
-    id: "2",
-    name: "Juan Pérez",
-    email: "juan@ejemplo.com",
-    role: "Supervisor",
-    createdAt: "2023-02-20",
-  },
-  {
-    id: "3",
-    name: "María López",
-    email: "maria@ejemplo.com",
-    role: "Operador",
-    createdAt: "2023-03-10",
-  },
-  {
-    id: "4",
-    name: "Carlos Rodríguez",
-    email: "carlos@ejemplo.com",
-    role: "Operador",
-    createdAt: "2023-04-05",
-  },
-  {
-    id: "5",
-    name: "Ana Martínez",
-    email: "ana@ejemplo.com",
-    role: "Supervisor",
-    createdAt: "2023-05-12",
-  },
-]
+async function loadUsers() {
+  const res = await fetch('http://localhost:3000/api/users');
+  const User = await res.json();
+  return User.data || null;
+} 
+
+type User = {
+  id: string
+  name: string
+  email: string
+  password: string
+  role: string
+  createdAt?: string
+}
+
+async function createUser(user: User) {
+  const res = await fetch('http://localhost:3000/api/users', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(user),
+  });
+
+  return res.json();
+}
+
+
 
 export default function UsersPage() {
   const router = useRouter()
@@ -76,7 +68,13 @@ export default function UsersPage() {
     email: "",
     password: "",
   })
-  const [users, setUsers] = useState(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
+
+  useEffect(() => {
+    loadUsers().then((users) => {
+      setUsers(users)
+    })
+  }, [])
 
   // Filtrar usuarios por término de búsqueda
   const filteredUsers = users.filter(
@@ -112,16 +110,34 @@ export default function UsersPage() {
     const newId = (users.length + 1).toString()
     const today = new Date().toISOString().split("T")[0]
 
-    setUsers([
-      ...users,
-      {
-        id: newId,
-        name: newUser.name,
-        email: newUser.email,
-        role: "Operador", // Rol por defecto
-        createdAt: today,
-      },
-    ])
+    createUser({
+      id: newId,
+      name: newUser.name,
+      email: newUser.email,
+      role: "Operador",
+      password: newUser.password,
+    }).then((response) => {
+      if (response.success) {
+        setUsers((prevUsers) => [...prevUsers, response.data])
+        toast({
+          title: "Usuario creado",
+          description: `Se ha creado el usuario ${newUser.name} correctamente`,
+        })
+      } else {
+        toast({
+          title: "Error",
+          description: response.error || "No se pudo crear el usuario",
+          variant: "destructive",
+        })
+      }
+    })
+    .catch((error) => {
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al crear el usuario",
+        variant: "destructive",
+      })
+    })
 
     // Limpiar formulario y cerrar diálogo
     setNewUser({
@@ -130,12 +146,6 @@ export default function UsersPage() {
       password: "",
     })
     setIsCreateDialogOpen(false)
-
-    // Mostrar notificación
-    toast({
-      title: "Usuario creado",
-      description: `Se ha creado el usuario ${newUser.name} correctamente`,
-    })
   }
 
   const handleDeleteUser = (id: string) => {

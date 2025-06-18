@@ -1,4 +1,5 @@
 import { connectToDatabase } from "@/lib/mongo"
+import bcrypt from "bcryptjs"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
@@ -113,8 +114,12 @@ export async function POST(request: NextRequest) {
       name,
       email,
       role: "Operador", // Rol por defecto
+      password: bcrypt.hashSync(password, 10),
       createdAt: new Date().toISOString().split("T")[0],
     }
+
+    const db = await connectToDatabase();
+    await db.collection('users').insertOne(newUser);
 
     return NextResponse.json(
       {
