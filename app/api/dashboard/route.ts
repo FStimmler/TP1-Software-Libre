@@ -1,3 +1,4 @@
+import { connectToDatabase } from "@/lib/mongo";
 import { NextResponse } from "next/server"
 
 /**
@@ -6,11 +7,12 @@ import { NextResponse } from "next/server"
  */
 export async function GET() {
   try {
-    // Simulación de datos para el dashboard
+    const db = await connectToDatabase();
+
     const dashboardData = {
-      totalCattle: 20,
-      connectedCattle: 18,
-      totalZones: 7,
+      totalCattle: await db.collection('cattle').countDocuments(),
+      connectedCattle: await db.collection('cattle').countDocuments({ connected: true }),
+      totalZones: await db.collection('zones').countDocuments(),
       alerts: 0,
       lastUpdated: new Date().toISOString(),
     }
