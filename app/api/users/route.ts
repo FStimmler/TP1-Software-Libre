@@ -24,10 +24,10 @@ export async function GET(request: NextRequest) {
       createdAt: string;
     }[]
 
-
+    // Solo trae usuarios donde `deleted` es `false` o no existe
     const db = await connectToDatabase();
-    users = (await db.collection('users').find().toArray()).map((doc: any) => ({ 
-      id: doc._id?.toString() ?? "",
+    users = (await db.collection('users').find({ $or: [{ deleted: false }, { deleted: { $exists: false } }] }).toArray()).map((doc: any) => ({ 
+      id: doc.id?.toString() ?? "",
       name: doc.name ?? "",
       email: doc.email ?? "",
       role: doc.role ?? "",
@@ -135,6 +135,61 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: "Error al crear usuario",
+      },
+      { status: 500 },
+    )
+  }
+}
+/**
+ * PATCH /api/users
+ * Elimina de manera lógica un usuario
+ */
+export async function PATCH(request: NextRequest) {
+  try {
+    // Obtener datos del cuerpo de la solicitud
+    const body = await request.json()
+    const { id } = body
+
+    // Validar campos requeridos
+    if (!id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Falta el ID del usuario",
+        },
+        { status: 400 },
+      )
+    }
+
+    const db = await connectToDatabase();
+    const result = await db.collection('users').updateOne(
+      { id: id },
+      { $set: { deleted: true } }
+    );
+
+    if (result.modifiedCount === 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Usuario no encontrado o no se realizaron cambios",
+        },
+        { status: 404 },
+      )
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Usuario eliminado correctamente",
+      },
+      { status: 200 },
+    )
+  } catch (error) {
+    console.error("Error al eliminar usuario:", error)
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Error al eliminar usuario",
       },
       { status: 500 },
     )

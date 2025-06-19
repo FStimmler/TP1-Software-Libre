@@ -56,6 +56,17 @@ async function createUser(user: User) {
   return res.json();
 }
 
+async function deleteUser(id: string) {
+  const res = await fetch('http://localhost:3000/api/users', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id }),
+  });
+
+  return res.json();
+}
 
 
 export default function UsersPage() {
@@ -150,10 +161,27 @@ export default function UsersPage() {
 
   const handleDeleteUser = (id: string) => {
     setUsers(users.filter((user) => user.id !== id))
-    toast({
-      title: "Usuario eliminado",
-      description: "El usuario ha sido eliminado correctamente",
-    })
+    deleteUser(id)
+      .then((response) => {
+        if (!response.success) {
+          toast({
+            title: "Error",
+            description: response.error || "No se pudo eliminar el usuario",
+            variant: "destructive",
+          })
+        }
+        toast({
+          title: "Usuario eliminado",
+          description: "El usuario ha sido eliminado correctamente",
+        })
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: "Ocurrió un error al eliminar el usuario",
+          variant: "destructive",
+        })
+      })
   }
 
   return (
