@@ -99,6 +99,9 @@ export default function CattleMap() {
             click: () => {
               setSelectedCattleId(cow.id)
             },
+            popupclose: () => {
+              setSelectedCattleId(null);
+            },
           }}
         >
           <Popup>

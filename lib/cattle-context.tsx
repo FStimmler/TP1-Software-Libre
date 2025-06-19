@@ -145,7 +145,7 @@ export function CattleProvider({ children }: { children: ReactNode }) {
           // Determinar en qué zona está
           let newZoneId: string | null = null
 
-          for (const zone of zones) {
+          for (const zone of zones.slice(1)) {
             let boundszone = zone.bounds.coordinates[0]
             const [[zMinLat, zMinLng], [zMaxLat, zMaxLng]] = [
               [boundszone[0][1], boundszone[0][0]],  // esquina SW (lat, lon)
@@ -161,6 +161,7 @@ export function CattleProvider({ children }: { children: ReactNode }) {
               newZoneId = zone.id
               break
             }
+            newZoneId = zones[0].id
           }
 
           // Verificar si salió de la zona general (primera zona)
