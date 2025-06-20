@@ -36,4 +36,6 @@ export async function initDatabase() {
   } else {
     console.log('ℹ️ Datos usuario ya existentes, no se insertan duplicados.');
   }
+  zonesCollection.createIndex({ bounds: "2dsphere" });
+
 }

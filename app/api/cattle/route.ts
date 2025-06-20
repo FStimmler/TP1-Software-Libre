@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const db = await connectToDatabase();
     cattle = (await db.collection('cattle').find().toArray()).map((doc: any) => ({
-      id: doc._id?.toString() ?? "",
+      id: doc.id?.toString() ?? "",
       name: doc.name ?? "",
       description: doc.description ?? "",
       imageUrl: doc.imageUrl ?? "",
