@@ -2,6 +2,7 @@ import { initDatabase } from "@/lib/init-db";
 import { connectToDatabase } from "@/lib/mongo";
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import Fuse from "fuse.js"
 
 await initDatabase();
 /**
@@ -55,14 +56,22 @@ export async function GET(request: NextRequest) {
     // Aplicar filtros
     let filteredCattle = cattle
 
-    // Filtrar por término de búsqueda
+    // Filtrar por término de búsqueda usando Fuse.js
     if (search) {
-      filteredCattle = filteredCattle.filter((cow) => cow.name.toLowerCase().includes(search.toLowerCase()))
+      let fuse = new Fuse(filteredCattle, {
+        keys: ["name", "description"],
+        threshold: 0.25, // Ajusta la sensibilidad de la búsqueda
+      })
+      filteredCattle = fuse.search(search).map(result => result.item)
     }
 
     // Filtrar por zona
     if (zoneId) {
-      filteredCattle = filteredCattle.filter((cow) => cow.zoneId === zoneId)
+      let fuse = new Fuse(filteredCattle, {
+        keys: ["zoneId", "description"],
+        threshold: 0.25, // Ajusta la sensibilidad de la búsqueda
+      })
+      filteredCattle = fuse.search(zoneId).map(result => result.item)
     }
 
     // Filtrar por estado de conexión

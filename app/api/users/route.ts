@@ -1,5 +1,6 @@
 import { connectToDatabase } from "@/lib/mongo"
 import bcrypt from "bcryptjs"
+import Fuse from "fuse.js"
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
@@ -35,15 +36,16 @@ export async function GET(request: NextRequest) {
       createdAt: doc.createdAt ?? "",
     }))
 
+    let filteredUsers = users
+
     // Filtrar por término de búsqueda si existe
-    const filteredUsers = search
-      ? users.filter(
-          (user) =>
-            user.name.toLowerCase().includes(search.toLowerCase()) ||
-            user.email.toLowerCase().includes(search.toLowerCase()) ||
-            user.role.toLowerCase().includes(search.toLowerCase()),
-        )
-      : users
+    if (search) {
+      let fuse = new Fuse(filteredUsers, {
+        keys: ["name", "email","role"],
+        threshold: 0.25, // Ajusta la sensibilidad de la búsqueda
+      })
+      filteredUsers = fuse.search(search).map(result => result.item)
+    }
 
     // Paginación simple
     const startIndex = (page - 1) * limit
