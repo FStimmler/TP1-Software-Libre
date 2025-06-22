@@ -31,7 +31,18 @@ export async function GET(request: NextRequest) {
     } []
 
     const db = await connectToDatabase();
-    cattle = (await db.collection('cattle').find().toArray()).map((doc: any) => ({
+    let mongoFilter: any = {};
+    // Si hay lat, lng y radius, usar geosearch
+    if (lat !== null && lng !== null && radius !== null) {
+      // radius en km, $centerSphere espera el radio en radianes
+      const radiusInRadians = radius / 6371;
+      mongoFilter.position = {
+        $geoWithin: {
+          $centerSphere: [[lat, lng], radiusInRadians]
+        }
+      };
+    }
+    cattle = (await db.collection('cattle').find(mongoFilter).toArray()).map((doc: any) => ({
       id: doc.id?.toString() ?? "",
       name: doc.name ?? "",
       description: doc.description ?? "",
@@ -80,14 +91,6 @@ export async function GET(request: NextRequest) {
       filteredCattle = filteredCattle.filter((cow) => cow.connected === isConnected)
     }
 
-    // Filtrar por ubicación (coordenadas y radio)
-    if (lat !== null && lng !== null && radius !== null) {
-      filteredCattle = filteredCattle.filter((cow) => {
-        const distance = calculateDistance(lat, lng, cow.position[0], cow.position[1])
-        return distance <= radius
-      })
-    }
-
     return NextResponse.json(
       {
         success: true,
@@ -104,5 +107,52 @@ export async function GET(request: NextRequest) {
       },
       { status: 500 },
     )
+  }
+}
+
+/**
+ * POST /api/cattle
+ * Crea una nueva vaca
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const db = await connectToDatabase();
+    const body = await request.json();
+    const { name, description, imageUrl, position } = body;
+
+    // Validaciones básicas
+    if (!name || !description || !position || position.length !== 2) {
+      return NextResponse.json({ success: false, error: "Faltan datos obligatorios" }, { status: 400 });
+    }
+
+    // Buscar zona por geosearch (opcional, si quieres asignar zona automáticamente)
+    let zoneId: string | null = null;
+    const zone = await db.collection("zones").findOne({
+      bounds: {
+        $geoIntersects: {
+          $geometry: {
+            type: "Point",
+            coordinates: [position[1], position[0]], // [lng, lat]
+          },
+        },
+      },
+    });
+    if (zone) zoneId = zone._id?.toString() ?? null;
+
+    // Crear vaca
+    const newCow = {
+      id: `cow-${Date.now()}`,
+      name,
+      description,
+      imageUrl: imageUrl || "",
+      position,
+      connected: true,
+      zoneId,
+    };
+    await db.collection("cattle").insertOne(newCow);
+    return NextResponse.json({ success: true, data: newCow, message: "Vaca creada correctamente" }, { status: 201 });
+  } catch (error) {
+    console.error("Error al crear vaca:", error);
+    return NextResponse.json({ success: false, error: "Error al crear vaca" }, { status: 500 });
   }
 }
