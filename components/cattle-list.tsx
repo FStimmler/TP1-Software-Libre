@@ -43,6 +43,15 @@ export default function CattleList() {
   const [radius, setRadius] = useState("")
   const [isLocationSearchActive, setIsLocationSearchActive] = useState(false)
 
+  // Botón destacado para buscar vacas por radio usando geosearch
+  const [showGeoSearchModal, setShowGeoSearchModal] = useState(false);
+  const [geoLat, setGeoLat] = useState("");
+  const [geoLng, setGeoLng] = useState("");
+  const [geoRadius, setGeoRadius] = useState("");
+
+  // Estado para mostrar resultados de geosearch en el mapa
+  const [geoSearchResults, setGeoSearchResults] = useState<string[]>([]);
+
   // Filtrar vacas por término de búsqueda
   let filteredCattle = cattle.filter(
     (cow) =>
@@ -256,34 +265,70 @@ export default function CattleList() {
       <div className="mb-4">
         <Button
           className="w-full text-lg py-4 bg-green-600 hover:bg-green-700 text-white font-bold mb-2"
-          onClick={async () => {
-            if (!latitude || !longitude || !radius) {
-              toast({ title: "Error", description: "Completa latitud, longitud y radio", variant: "destructive" });
-              return;
-            }
-            try {
-              const res = await fetch(`/api/cattle-geosearch?lat=${latitude}&lng=${longitude}&radius=${radius}`);
-              const data = await res.json();
-              if (data.success && data.data.length > 0) {
-                toast({
-                  title: `Vacas encontradas (${data.data.length})`,
-                  description: data.data.map((c) => c.name).join(", ") || "Sin vacas en el radio",
-                  variant: "success"
-                });
-              } else {
-                toast({
-                  title: "Sin vacas en el radio",
-                  description: "No se encontraron vacas en ese radio",
-                  variant: "destructive"
-                });
-              }
-            } catch (err) {
-              toast({ title: "Error", description: "No se pudo buscar vacas por radio (geosearch)", variant: "destructive" });
-            }
-          }}
+          onClick={() => setShowGeoSearchModal(true)}
         >
           Buscar vacas
         </Button>
+        {showGeoSearchModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+              <h2 className="text-lg font-semibold mb-4">Buscar vacas por radio (geosearch)</h2>
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!geoLat || !geoLng || !geoRadius) {
+                    toast({ title: "Error", description: "Completa latitud, longitud y radio", variant: "destructive" });
+                    return;
+                  }
+                  try {
+                    const res = await fetch(`/api/cattle-geosearch?lat=${geoLat}&lng=${geoLng}&radius=${geoRadius}`);
+                    const data = await res.json();
+                    if (data.success && data.data.length > 0) {
+                      setGeoSearchResults(data.data.map((c: any) => c.id));
+                      toast({
+                        title: `Vacas encontradas (${data.data.length})`,
+                        description: data.data.map((c: any) => c.name).join(", ") || "Sin vacas en el radio",
+                        variant: "success"
+                      });
+                    } else {
+                      setGeoSearchResults([]);
+                      toast({
+                        title: "Sin vacas en el radio",
+                        description: "No se encontraron vacas en ese radio",
+                        variant: "destructive"
+                      });
+                    }
+                  } catch (err) {
+                    setGeoSearchResults([]);
+                    toast({ title: "Error", description: "No se pudo buscar vacas por radio (geosearch)", variant: "destructive" });
+                  } finally {
+                    setShowGeoSearchModal(false);
+                    setGeoLat("");
+                    setGeoLng("");
+                    setGeoRadius("");
+                  }
+                }}
+              >
+                <div className="mb-2">
+                  <Label>Latitud</Label>
+                  <Input required type="number" value={geoLat} onChange={e => setGeoLat(e.target.value)} />
+                </div>
+                <div className="mb-2">
+                  <Label>Longitud</Label>
+                  <Input required type="number" value={geoLng} onChange={e => setGeoLng(e.target.value)} />
+                </div>
+                <div className="mb-2">
+                  <Label>Radio (km)</Label>
+                  <Input required type="number" value={geoRadius} onChange={e => setGeoRadius(e.target.value)} />
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button type="submit" className="w-full">Buscar</Button>
+                  <Button type="button" variant="outline" className="w-full" onClick={() => setShowGeoSearchModal(false)}>Cancelar</Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
 
       <Separator />
@@ -296,7 +341,7 @@ export default function CattleList() {
             <div
               key={cow.id}
               className={`flex items-center p-2 rounded-md cursor-pointer transition-colors ${
-                selectedCattleId === cow.id ? "bg-green-50" : "hover:bg-gray-50"
+                selectedCattleId === cow.id ? "bg-green-50" : geoSearchResults.includes(cow.id) ? "bg-yellow-100 border-2 border-yellow-400" : "hover:bg-gray-50"
               }`}
               onClick={() => setSelectedCattleId(cow.id)}
             >
