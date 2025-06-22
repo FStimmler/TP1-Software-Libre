@@ -106,3 +106,50 @@ export async function GET(request: NextRequest) {
     )
   }
 }
+
+/**
+ * POST /api/cattle
+ * Crea una nueva vaca
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const db = await connectToDatabase();
+    const body = await request.json();
+    const { name, description, imageUrl, position } = body;
+
+    // Validaciones básicas
+    if (!name || !description || !position || position.length !== 2) {
+      return NextResponse.json({ success: false, error: "Faltan datos obligatorios" }, { status: 400 });
+    }
+
+    // Buscar zona por geosearch (opcional, si quieres asignar zona automáticamente)
+    let zoneId: string | null = null;
+    const zone = await db.collection("zones").findOne({
+      bounds: {
+        $geoIntersects: {
+          $geometry: {
+            type: "Point",
+            coordinates: [position[1], position[0]], // [lng, lat]
+          },
+        },
+      },
+    });
+    if (zone) zoneId = zone._id?.toString() ?? null;
+
+    // Crear vaca
+    const newCow = {
+      id: `cow-${Date.now()}`,
+      name,
+      description,
+      imageUrl: imageUrl || "",
+      position,
+      connected: true,
+      zoneId,
+    };
+    await db.collection("cattle").insertOne(newCow);
+    return NextResponse.json({ success: true, data: newCow, message: "Vaca creada correctamente" }, { status: 201 });
+  } catch (error) {
+    console.error("Error al crear vaca:", error);
+    return NextResponse.json({ success: false, error: "Error al crear vaca" }, { status: 500 });
+  }
+}

@@ -1,5 +1,6 @@
 services:
   client:
+    container_name: client
     build: .
     ports:
       - "3000:3000"
@@ -12,6 +13,7 @@ services:
       - app-network
 
   mongo:
+    container_name: mongo
     image: mongo:6
     ports:
       - "27017:27017"
