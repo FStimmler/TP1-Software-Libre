@@ -4,13 +4,8 @@ services:
     build: .
     ports:
       - "3000:3000"
-<<<<<<< HEAD
-    # volumes:
-    #   - .:/app
-=======
     #volumes:
     #  - .:/app
->>>>>>> f4a5c300d7bd5a25d1a679e8dd8d3176c9368a4c
     command: sh -c "npm run dev && npm run start"
     depends_on:
       - mongo

@@ -31,7 +31,18 @@ export async function GET(request: NextRequest) {
     } []
 
     const db = await connectToDatabase();
-    cattle = (await db.collection('cattle').find().toArray()).map((doc: any) => ({
+    let mongoFilter: any = {};
+    // Si hay lat, lng y radius, usar geosearch
+    if (lat !== null && lng !== null && radius !== null) {
+      // radius en km, $centerSphere espera el radio en radianes
+      const radiusInRadians = radius / 6371;
+      mongoFilter.position = {
+        $geoWithin: {
+          $centerSphere: [[lat, lng], radiusInRadians]
+        }
+      };
+    }
+    cattle = (await db.collection('cattle').find(mongoFilter).toArray()).map((doc: any) => ({
       id: doc.id?.toString() ?? "",
       name: doc.name ?? "",
       description: doc.description ?? "",
@@ -78,14 +89,6 @@ export async function GET(request: NextRequest) {
     if (connected !== null) {
       const isConnected = connected === "true"
       filteredCattle = filteredCattle.filter((cow) => cow.connected === isConnected)
-    }
-
-    // Filtrar por ubicación (coordenadas y radio)
-    if (lat !== null && lng !== null && radius !== null) {
-      filteredCattle = filteredCattle.filter((cow) => {
-        const distance = calculateDistance(lat, lng, cow.position[0], cow.position[1])
-        return distance <= radius
-      })
     }
 
     return NextResponse.json(
