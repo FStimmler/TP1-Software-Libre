@@ -252,6 +252,40 @@ export default function CattleList() {
         </div>
       )}
 
+      {/* Botón destacado para buscar vacas por radio usando geosearch */}
+      <div className="mb-4">
+        <Button
+          className="w-full text-lg py-4 bg-green-600 hover:bg-green-700 text-white font-bold mb-2"
+          onClick={async () => {
+            if (!latitude || !longitude || !radius) {
+              toast({ title: "Error", description: "Completa latitud, longitud y radio", variant: "destructive" });
+              return;
+            }
+            try {
+              const res = await fetch(`/api/cattle-geosearch?lat=${latitude}&lng=${longitude}&radius=${radius}`);
+              const data = await res.json();
+              if (data.success && data.data.length > 0) {
+                toast({
+                  title: `Vacas encontradas (${data.data.length})`,
+                  description: data.data.map((c) => c.name).join(", ") || "Sin vacas en el radio",
+                  variant: "success"
+                });
+              } else {
+                toast({
+                  title: "Sin vacas en el radio",
+                  description: "No se encontraron vacas en ese radio",
+                  variant: "destructive"
+                });
+              }
+            } catch (err) {
+              toast({ title: "Error", description: "No se pudo buscar vacas por radio (geosearch)", variant: "destructive" });
+            }
+          }}
+        >
+          Buscar vacas
+        </Button>
+      </div>
+
       <Separator />
 
       <div className="space-y-1">
@@ -330,6 +364,39 @@ export default function CattleList() {
           }}
         >
           Consultar zona de la vaca seleccionada
+        </Button>
+      )}
+
+      {/* Botón para consultar zonas por geosearch de la vaca seleccionada */}
+      {selectedCattleId && (
+        <Button
+          className="w-full mb-2"
+          variant="secondary"
+          onClick={async () => {
+            const cow = cattle.find((c) => c.id === selectedCattleId);
+            if (!cow) return;
+            try {
+              const res = await fetch(`/api/zones?cattle=${encodeURIComponent(selectedCattleId.replace(/^cow-/, ""))}`);
+              const data = await res.json();
+              if (data.success && data.data.length > 0) {
+                toast({
+                  title: `Zonas (geosearch) de ${cow.name}`,
+                  description: data.data.map((z) => z.name).join(", ") || "Sin zona",
+                  variant: "success"
+                });
+              } else {
+                toast({
+                  title: `Zonas (geosearch) de ${cow.name}`,
+                  description: "Sin zona encontrada",
+                  variant: "destructive"
+                });
+              }
+            } catch (err) {
+              toast({ title: "Error", description: "No se pudo consultar la zona (geosearch)", variant: "destructive" });
+            }
+          }}
+        >
+          Ver zonas por geosearch
         </Button>
       )}
     </div>
