@@ -1,0 +1,12 @@
+[Unit]
+Description=Daemon Bash - monitor contenedor Mongo
+After=network.target docker.service
+
+[Service]
+Type=simple
+ExecStart=/home/mikel/migracion/mikel/Documents/Facultad/SoftwareLibre/TP1-Software-Libre/daemon/monitorMongo.sh
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
